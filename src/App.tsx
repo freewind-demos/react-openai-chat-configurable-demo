@@ -22,6 +22,7 @@ interface Message {
 
 function App() {
   const [configOpen, setConfigOpen] = useState(true)
+  const [proxyURL, setProxyURL] = useState('http://localhost:52742')
   const [baseURL, setBaseURL] = useState('https://api.openai.com/v1')
   const [apiKey, setApiKey] = useState('')
   const [model, setModel] = useState('gpt-4o-mini')
@@ -49,9 +50,13 @@ function App() {
     setMessages([...nextMessages, assistantMsg])
 
     const client = new OpenAI({
-      baseURL: baseURL.trim(),
-      apiKey: apiKey.trim(),
+      baseURL: `${proxyURL.trim()}/v1`,
+      apiKey: 'dummy',
       dangerouslyAllowBrowser: true,
+      defaultHeaders: {
+        'X-Target-URL': baseURL.trim(),
+        'X-API-Key': apiKey.trim(),
+      },
     })
 
     abortRef.current = new AbortController()
@@ -88,7 +93,7 @@ function App() {
       setLoading(false)
       abortRef.current = null
     }
-  }, [input, loading, apiKey, baseURL, model, messages])
+  }, [input, loading, apiKey, proxyURL, baseURL, model, messages])
 
   const stop = useCallback(() => {
     abortRef.current?.abort()
@@ -123,7 +128,12 @@ function App() {
         <Card size="small" style={{ margin: 12, marginBottom: 0 }}>
           <Flex vertical gap={8}>
             <Input
-              placeholder="Base URL，如 https://api.openai.com/v1"
+              placeholder="代理地址，如 http://localhost:52742"
+              value={proxyURL}
+              onChange={(e) => setProxyURL(e.target.value)}
+            />
+            <Input
+              placeholder="目标 Base URL，如 https://api.openai.com/v1"
               value={baseURL}
               onChange={(e) => setBaseURL(e.target.value)}
             />
